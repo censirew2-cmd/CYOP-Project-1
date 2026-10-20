@@ -61,7 +61,7 @@ def load_tasks():
         or not is_valid_due_date(task.get("due_date", ""))
         for task in tasks
     ):
-        raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
+       raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
     for task in tasks:
         task.setdefault("priority", "medium")
         task.setdefault("due_date", "")
@@ -146,7 +146,7 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
 
         self.send_json(404, {"error": "Not found."})
 
-    def do_POST(self):
+    def do_POST(self) -> None:
         """Handle creation of a new task."""
         if urlsplit(self.path).path != "/api/tasks":
             self.send_json(404, {"error": "Not found."})
