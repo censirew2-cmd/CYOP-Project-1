@@ -61,7 +61,7 @@ def load_tasks():
         or not is_valid_due_date(task.get("due_date", ""))
         for task in tasks
     ):
-         raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
+        raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
     for task in tasks:
         task.setdefault("priority", "medium")
         task.setdefault("due_date", "")
@@ -113,6 +113,7 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
             raise InvalidRequest("Request body must contain valid JSON.") from error
 
     def serve_file(self, filename, content_type):
+        """Serve a static file with the given filename and content type."""
         content = Path(__file__).with_name(filename).read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", content_type)
@@ -146,6 +147,7 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
         self.send_json(404, {"error": "Not found."})
 
     def do_POST(self):
+        """Handle creation of a new task."""
         if urlsplit(self.path).path != "/api/tasks":
             self.send_json(404, {"error": "Not found."})
             return
