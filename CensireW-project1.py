@@ -30,6 +30,7 @@ class InvalidRequest(ValueError):
 
 
 def is_valid_due_date(value):
+    """Return True if the value is a valid ISO 8601 date string, otherwise False."""
     if not isinstance(value, str):
         return False
     if not value:
@@ -60,7 +61,7 @@ def load_tasks():
         or not is_valid_due_date(task.get("due_date", ""))
         for task in tasks
     ):
-        raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
+         raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
     for task in tasks:
         task.setdefault("priority", "medium")
         task.setdefault("due_date", "")
@@ -87,7 +88,9 @@ def save_tasks(tasks):
 
 
 class TodoRequestHandler(BaseHTTPRequestHandler):
+    """A request handler for the to-do manager web app."""
     def send_json(self, status, data):
+        """Send a JSON response with the given status code and data."""
         payload = json.dumps(data).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -97,6 +100,7 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def read_json(self):
+        """Read and parse a JSON request body, raising InvalidRequest on error."""
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError as error:
@@ -117,7 +121,8 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
-    def do_GET(self):
+    def do_GET(self):  # pylint: disable=invalid-name
+        """Handle GET requests for web assets and tasks."""
         path = urlsplit(self.path).path
         if path in WEB_FILES:
             filename, content_type = WEB_FILES[path]
@@ -174,7 +179,8 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
             logging.exception("Unable to save new task")
             self.send_json(500, {"error": "The task could not be saved."})
 
-    def do_PATCH(self):
+    def do_PATCH(self):  # pylint: disable=invalid-name,too-many-branches
+        """Handle partial updates to a task."""
         match = TASK_PATH.fullmatch(urlsplit(self.path).path)
         if match is None:
             self.send_json(404, {"error": "Not found."})
@@ -223,7 +229,8 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
             logging.exception("Unable to update task")
             self.send_json(500, {"error": "The task could not be updated."})
 
-    def do_DELETE(self):
+    def do_DELETE(self):  # pylint: disable=invalid-name
+        """Delete a task identified by the request path."""
         match = TASK_PATH.fullmatch(urlsplit(self.path).path)
         if match is None:
             self.send_json(404, {"error": "Not found."})
@@ -244,6 +251,7 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
 
 
 def main():
+    """Start the to-do manager web server."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     server = ThreadingHTTPServer(("127.0.0.1", 8000), TodoRequestHandler)
     print("To-do manager is running at http://127.0.0.1:8000")
