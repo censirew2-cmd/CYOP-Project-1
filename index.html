@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6f2">
+  <title>Daylist — To-do manager</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar" aria-label="App information">
+      <a class="brand" href="/" aria-label="Daylist home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m5 12.5 4.2 4.2L19 7"/></svg>
+        </span>
+        <span>daylist<span class="brand-period">.</span></span>
+      </a>
+      <div class="sidebar-note">
+        <span class="eyebrow">A little more focused</span>
+        <p>Make room for what matters, one task at a time.</p>
+      </div>
+      <div class="sidebar-bottom">
+        <span class="sidebar-dot"></span>
+        <span>Your list is saved on this device</span>
+      </div>
+    </aside>
+
+    <section class="workspace" aria-labelledby="page-title">
+      <header class="topbar">
+        <span class="today-label" id="today-label"></span>
+        <span class="topbar-tag"><span class="live-dot"></span> YOUR PERSONAL SPACE</span>
+      </header>
+
+      <div class="content">
+        <div class="heading-row">
+          <div>
+            <p class="eyebrow heading-eyebrow">A fresh start, every day</p>
+            <h1 id="page-title">Your to-do list<span class="heading-period">.</span></h1>
+            <p class="subtitle">Small steps add up. What would you like to get done?</p>
+          </div>
+          <div class="completion-card" aria-live="polite">
+            <span class="completion-number" id="completion-number">0</span>
+            <span class="completion-copy"><strong>completed</strong><span>tasks today</span></span>
+          </div>
+        </div>
+
+        <form class="add-form" id="add-form">
+          <span class="add-icon" aria-hidden="true">+</span>
+          <label class="visually-hidden" for="task-input">Add a task</label>
+          <input id="task-input" name="title" type="text" maxlength="500" placeholder="Add a task to your list..." autocomplete="off" required>
+          <button class="add-button" type="submit">Add task <span aria-hidden="true">↗</span></button>
+        </form>
+
+        <div class="list-toolbar">
+          <div class="list-heading">
+            <h2>Your tasks</h2>
+            <span class="task-count" id="task-count">0</span>
+          </div>
+          <div class="filters" role="group" aria-label="Filter tasks">
+            <button class="filter-button is-active" type="button" data-filter="all" aria-pressed="true">All</button>
+            <button class="filter-button" type="button" data-filter="active" aria-pressed="false">In progress</button>
+            <button class="filter-button" type="button" data-filter="completed" aria-pressed="false">Completed</button>
+          </div>
+        </div>
+
+        <div class="progress-track" aria-label="Task completion">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <ul class="task-list" id="task-list" aria-live="polite"></ul>
+        <div class="empty-state" id="empty-state" hidden>
+          <span class="empty-illustration" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><path d="M14 8h20a4 4 0 0 1 4 4v28H10V12a4 4 0 0 1 4-4Zm4 0V5h12v3m-11 13 4 4 8-9m-12 16h14"/></svg>
+          </span>
+          <h3 id="empty-title">Nothing on your list yet</h3>
+          <p id="empty-copy">Add your first task above and make today count.</p>
+        </div>
+        <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
+      </div>
+      <footer class="footer"><span>One thing at a time.</span><span>DAYLIST <span class="footer-star">✳</span></span></footer>
+    </section>
+  </main>
+</body>
+</html>

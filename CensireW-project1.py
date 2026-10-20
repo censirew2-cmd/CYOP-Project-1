@@ -1,95 +1,202 @@
-"""A simple command-line to-do list manager."""
+"""A small web-based to-do list manager."""
 
 import json
+import logging
+import re
+import tempfile
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 TASKS_FILE = Path(__file__).with_name("tasks.json")
+WEB_FILES = {
+    "/": ("index.html", "text/html; charset=utf-8"),
+    "/index.html": ("index.html", "text/html; charset=utf-8"),
+    "/styles.css": ("styles.css", "text/css; charset=utf-8"),
+    "/app.js": ("app.js", "text/javascript; charset=utf-8"),
+}
+TASK_PATH = re.compile(r"^/api/tasks/(\d+)$")
+TASKS_LOCK = threading.Lock()
+MAX_REQUEST_SIZE = 16_384
+
+
+class InvalidRequest(ValueError):
+    """A client request did not contain valid task data."""
 
 
 def load_tasks():
-	"""Load saved tasks, or start with an empty list."""
-	try:
-		with TASKS_FILE.open("r", encoding="utf-8") as file:
-			tasks = json.load(file)
-		return tasks if isinstance(tasks, list) else []
-	except (OSError, json.JSONDecodeError):
-		return []
+    """Read saved tasks, returning an empty list on first launch."""
+    try:
+        with TASKS_FILE.open("r", encoding="utf-8") as file:
+            tasks = json.load(file)
+    except FileNotFoundError:
+        return []
+
+    if not isinstance(tasks, list) or any(
+        not isinstance(task, dict)
+        or not isinstance(task.get("title"), str)
+        or not isinstance(task.get("done"), bool)
+        for task in tasks
+    ):
+        raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
+    return tasks
 
 
 def save_tasks(tasks):
-	"""Save tasks next to this script."""
-	with TASKS_FILE.open("w", encoding="utf-8") as file:
-		json.dump(tasks, file, indent=2)
+    """Atomically save tasks next to this script."""
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=TASKS_FILE.parent,
+            delete=False,
+        ) as file:
+            temporary_path = Path(file.name)
+            json.dump(tasks, file, indent=2)
+            file.write("\n")
+        temporary_path.replace(TASKS_FILE)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
 
 
-def show_tasks(tasks):
-	if not tasks:
-		print("\nYour to-do list is empty.")
-		return
+class TodoRequestHandler(BaseHTTPRequestHandler):
+    def send_json(self, status, data):
+        payload = json.dumps(data).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(payload)
 
-	print("\nTo-do list:")
-	for number, task in enumerate(tasks, start=1):
-		status = "[x]" if task["done"] else "[ ]"
-		print(f"{number}. {status} {task['title']}")
+    def read_json(self):
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError as error:
+            raise InvalidRequest("Invalid request body length.") from error
+        if length < 1 or length > MAX_REQUEST_SIZE:
+            raise InvalidRequest("Request body must be between 1 byte and 16 KB.")
+        try:
+            return json.loads(self.rfile.read(length))
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise InvalidRequest("Request body must contain valid JSON.") from error
 
+    def serve_file(self, filename, content_type):
+        content = Path(__file__).with_name(filename).read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(content)
 
-def read_task_number(tasks, action):
-	if not tasks:
-		print("There are no tasks to " + action + ".")
-		return None
-	try:
-		number = int(input("Task number: "))
-		if 1 <= number <= len(tasks):
-			return number - 1
-	except ValueError:
-		pass
-	print("Please enter a valid task number.")
-	return None
+    def do_GET(self):
+        path = urlsplit(self.path).path
+        if path in WEB_FILES:
+            filename, content_type = WEB_FILES[path]
+            try:
+                self.serve_file(filename, content_type)
+            except OSError:
+                logging.exception("Unable to serve %s", filename)
+                self.send_json(500, {"error": "The web app could not load a required file."})
+            return
+
+        if path == "/api/tasks":
+            try:
+                with TASKS_LOCK:
+                    tasks = load_tasks()
+                self.send_json(200, {"tasks": tasks})
+            except (OSError, ValueError):
+                logging.exception("Unable to load tasks")
+                self.send_json(500, {"error": "Tasks could not be loaded. Check tasks.json."})
+            return
+
+        self.send_json(404, {"error": "Not found."})
+
+    def do_POST(self):
+        if urlsplit(self.path).path != "/api/tasks":
+            self.send_json(404, {"error": "Not found."})
+            return
+        try:
+            body = self.read_json()
+            title = body.get("title") if isinstance(body, dict) else None
+            if not isinstance(title, str) or not title.strip():
+                raise InvalidRequest("A task description is required.")
+            if len(title.strip()) > 500:
+                raise InvalidRequest("Task descriptions must be 500 characters or fewer.")
+            with TASKS_LOCK:
+                tasks = load_tasks()
+                task = {"title": title.strip(), "done": False}
+                tasks.append(task)
+                save_tasks(tasks)
+            self.send_json(201, {"task": task})
+        except InvalidRequest as error:
+            self.send_json(400, {"error": str(error)})
+        except (OSError, ValueError):
+            logging.exception("Unable to save new task")
+            self.send_json(500, {"error": "The task could not be saved."})
+
+    def do_PATCH(self):
+        match = TASK_PATH.fullmatch(urlsplit(self.path).path)
+        if match is None:
+            self.send_json(404, {"error": "Not found."})
+            return
+        try:
+            body = self.read_json()
+            done = body.get("done") if isinstance(body, dict) else None
+            if not isinstance(done, bool):
+                raise InvalidRequest("Completion state must be true or false.")
+            with TASKS_LOCK:
+                tasks = load_tasks()
+                index = int(match.group(1))
+                if index >= len(tasks):
+                    self.send_json(404, {"error": "Task not found."})
+                    return
+                tasks[index]["done"] = done
+                save_tasks(tasks)
+                task = tasks[index]
+            self.send_json(200, {"task": task})
+        except InvalidRequest as error:
+            self.send_json(400, {"error": str(error)})
+        except (OSError, ValueError):
+            logging.exception("Unable to update task")
+            self.send_json(500, {"error": "The task could not be updated."})
+
+    def do_DELETE(self):
+        match = TASK_PATH.fullmatch(urlsplit(self.path).path)
+        if match is None:
+            self.send_json(404, {"error": "Not found."})
+            return
+        try:
+            with TASKS_LOCK:
+                tasks = load_tasks()
+                index = int(match.group(1))
+                if index >= len(tasks):
+                    self.send_json(404, {"error": "Task not found."})
+                    return
+                task = tasks.pop(index)
+                save_tasks(tasks)
+            self.send_json(200, {"task": task})
+        except (OSError, ValueError):
+            logging.exception("Unable to delete task")
+            self.send_json(500, {"error": "The task could not be deleted."})
 
 
 def main():
-	tasks = load_tasks()
-
-	while True:
-		print("\nTo-Do List Manager")
-		print("1. View tasks")
-		print("2. Add task")
-		print("3. Mark task complete/incomplete")
-		print("4. Delete task")
-		print("5. Quit")
-		choice = input("Choose an option: ").strip()
-
-		if choice == "1":
-			show_tasks(tasks)
-		elif choice == "2":
-			title = input("Task description: ").strip()
-			if title:
-				tasks.append({"title": title, "done": False})
-				save_tasks(tasks)
-				print("Task added.")
-			else:
-				print("Task description cannot be empty.")
-		elif choice == "3":
-			show_tasks(tasks)
-			index = read_task_number(tasks, "update")
-			if index is not None:
-				tasks[index]["done"] = not tasks[index]["done"]
-				save_tasks(tasks)
-				print("Task status updated.")
-		elif choice == "4":
-			show_tasks(tasks)
-			index = read_task_number(tasks, "delete")
-			if index is not None:
-				removed = tasks.pop(index)
-				save_tasks(tasks)
-				print(f"Deleted: {removed['title']}")
-		elif choice == "5":
-			print("Goodbye!")
-			break
-		else:
-			print("Please choose an option from 1 to 5.")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    server = ThreadingHTTPServer(("127.0.0.1", 8000), TodoRequestHandler)
+    print("To-do manager is running at http://127.0.0.1:8000")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nShutting down the to-do manager.")
+    finally:
+        server.server_close()
 
 
 if __name__ == "__main__":
-	main()
+    main()
