@@ -9,6 +9,7 @@ const statusMessage = document.querySelector("#status-message");
 const addForm = document.querySelector("#add-form");
 const taskInput = document.querySelector("#task-input");
 const priorityInput = document.querySelector("#priority-input");
+const dueDateInput = document.querySelector("#due-date-input");
 const addButton = addForm.querySelector("button");
 
 let tasks = [];
@@ -77,6 +78,28 @@ function renderTasks() {
     priority.className = `priority-badge priority-${task.priority || "medium"}`;
     priority.textContent = `${task.priority || "medium"} priority`;
 
+    if (task.due_date) {
+      const dueDate = document.createElement("time");
+      const [year, month, day] = task.due_date.split("-").map(Number);
+      const localDate = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dueDate.className = "due-date";
+      if (!task.done && localDate < today) {
+        dueDate.classList.add("is-overdue");
+      }
+      dueDate.dateTime = task.due_date;
+      dueDate.textContent = new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+        year: year === today.getFullYear() ? undefined : "numeric",
+      }).format(localDate);
+      dueDate.setAttribute("aria-label", `Due ${dueDate.textContent}`);
+      item.append(toggle, title, priority, dueDate);
+    } else {
+      item.append(toggle, title, priority);
+    }
+
     const remove = document.createElement("button");
     remove.className = "delete-button";
     remove.type = "button";
@@ -84,7 +107,7 @@ function renderTasks() {
     remove.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12m-10 0 .7 10h6.6L14 6m-6-2h4l1 2m-4 3v4m3-4v4"/></svg>';
     remove.addEventListener("click", () => deleteTask(task.index));
 
-    item.append(toggle, title, priority, remove);
+    item.append(remove);
     taskList.append(item);
   }
 
@@ -130,6 +153,7 @@ addForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const title = taskInput.value.trim();
   const priority = priorityInput.value;
+  const dueDate = dueDateInput.value;
   if (!title) {
     showError("Task description cannot be empty.");
     taskInput.focus();
@@ -141,11 +165,12 @@ addForm.addEventListener("submit", async (event) => {
   try {
     const data = await request("/api/tasks", {
       method: "POST",
-      body: JSON.stringify({ title, priority }),
+      body: JSON.stringify({ title, priority, due_date: dueDate }),
     });
     tasks.push(data.task);
     taskInput.value = "";
     priorityInput.value = "medium";
+    dueDateInput.value = "";
     activeFilter = "all";
     document.querySelectorAll(".filter-button").forEach((button) => {
       const selected = button.dataset.filter === activeFilter;

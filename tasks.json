@@ -2,6 +2,19 @@
   {
     "title": "Buy Flowers",
     "done": false,
-    "priority": "medium"
+    "priority": "medium",
+    "due_date": ""
+  },
+  {
+    "title": "Project 1",
+    "done": false,
+    "priority": "medium",
+    "due_date": ""
+  },
+  {
+    "title": "Walk Ali",
+    "done": false,
+    "priority": "low",
+    "due_date": ""
   }
 ]

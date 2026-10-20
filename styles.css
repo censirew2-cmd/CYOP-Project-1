@@ -129,6 +129,8 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
 .add-form input::placeholder { color: #a6aca6; }
 .priority-select { flex: 0 0 auto; padding: 10px 8px; border: 1px solid #e9ece6; border-radius: 8px; outline: 0; color: #59645a; background: #fbfcfa; font-size: 10px; cursor: pointer; }
 .priority-select:focus { border-color: #a7bda8; }
+.date-input { flex: 0 0 auto; width: 132px !important; padding: 9px 7px !important; border: 1px solid #e9ece6 !important; border-radius: 8px; outline: 0; color: #59645a !important; background: #fbfcfa; font-size: 10px !important; }
+.date-input:focus { border-color: #a7bda8 !important; }
 .add-button { display: inline-flex; align-items: center; justify-content: center; gap: 11px; min-width: 106px; padding: 11px 14px; border: 0; border-radius: 8px; color: #fff; background: var(--green); font-size: 11px; font-weight: 600; cursor: pointer; transition: background .2s, transform .2s; }
 .add-button:hover { transform: translateY(-1px); background: var(--green-dark); }
 .add-button:disabled { opacity: .65; cursor: wait; }
@@ -158,6 +160,8 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
 .priority-low { color: #56775a; background: #eef5ed; }
 .priority-medium { color: #8a6b35; background: #f8f2e5; }
 .priority-high { color: #a6534a; background: #fbefed; }
+.due-date { flex: 0 0 auto; color: #838c83; font-size: 10px; white-space: nowrap; }
+.due-date.is-overdue { color: #b24f44; font-weight: 600; }
 .delete-button { display: grid; width: 29px; height: 29px; padding: 0; place-items: center; border: 0; border-radius: 7px; color: #a1a7a0; background: transparent; opacity: 0; cursor: pointer; transition: color .2s, background .2s, opacity .2s; }
 .task-item:hover .delete-button, .delete-button:focus-visible { opacity: 1; }
 .delete-button:hover { color: #a6534a; background: #fbf0ee; }
@@ -198,6 +202,7 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
   .add-form { flex-wrap: wrap; gap: 8px; margin-top: 28px; padding: 10px; }
   .add-form input { flex: 1 1 calc(100% - 35px); }
   .priority-select { margin-left: 27px; }
+  .date-input { width: 126px !important; }
   .add-button { min-width: 82px; gap: 6px; margin-left: auto; padding: 10px 9px; font-size: 10px; }
   .task-item { gap: 9px; padding: 12px 10px; }
   .priority-badge { padding: 5px 6px; font-size: 8px; }
