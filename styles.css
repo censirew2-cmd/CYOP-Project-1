@@ -143,6 +143,11 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
 .filter-button { padding: 7px 10px; border: 0; border-radius: 6px; color: #858c85; background: transparent; font-size: 10px; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
 .filter-button:hover { color: var(--green-dark); }
 .filter-button.is-active { color: #344b38; background: #fff; box-shadow: 0 1px 3px rgb(30 45 35 / 9%); font-weight: 600; }
+.task-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.filter-control { display: flex; flex-direction: column; gap: 6px; color: #858c85; font-size: 9px; font-weight: 600; }
+.filter-select, .filter-date { min-height: 34px; padding: 7px 9px; border: 1px solid #e9ece6; border-radius: 8px; outline: 0; color: #59645a; background: #fbfcfa; font: inherit; font-size: 10px; }
+.filter-select:focus, .filter-date:focus { border-color: #a7bda8; }
+.filter-date { width: 138px; }
 
 .progress-track { height: 3px; margin-top: 16px; overflow: hidden; border-radius: 4px; background: #f0f1ed; }
 .progress-fill { width: 0; height: 100%; border-radius: inherit; background: #7ba17b; transition: width .3s ease; }
@@ -162,10 +167,25 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
 .priority-high { color: #a6534a; background: #fbefed; }
 .due-date { flex: 0 0 auto; color: #838c83; font-size: 10px; white-space: nowrap; }
 .due-date.is-overdue { color: #b24f44; font-weight: 600; }
+.task-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; }
 .delete-button { display: grid; width: 29px; height: 29px; padding: 0; place-items: center; border: 0; border-radius: 7px; color: #a1a7a0; background: transparent; opacity: 0; cursor: pointer; transition: color .2s, background .2s, opacity .2s; }
-.task-item:hover .delete-button, .delete-button:focus-visible { opacity: 1; }
+.edit-button { display: grid; width: 29px; height: 29px; padding: 0; place-items: center; border: 0; border-radius: 7px; color: #829082; background: transparent; opacity: 0; cursor: pointer; transition: color .2s, background .2s, opacity .2s; }
+.task-item:hover .delete-button, .task-item:hover .edit-button, .delete-button:focus-visible, .edit-button:focus-visible { opacity: 1; }
+.edit-button:hover { color: var(--green-dark); background: var(--green-soft); }
 .delete-button:hover { color: #a6534a; background: #fbf0ee; }
-.delete-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
+.delete-button svg, .edit-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
+.task-editor { display: flex; flex: 1 1 100%; align-items: center; flex-wrap: wrap; gap: 9px; }
+.edit-title-input, .edit-priority-input, .edit-date-input { min-height: 35px; padding: 8px 9px; border: 1px solid #e4e9e2; border-radius: 7px; outline: 0; color: #414941; background: #fff; font: inherit; font-size: 11px; }
+.edit-title-input { flex: 1 1 180px; min-width: 130px; }
+.edit-priority-input, .edit-date-input { flex: 0 0 auto; }
+.edit-title-input:focus, .edit-priority-input:focus, .edit-date-input:focus { border-color: #a7bda8; }
+.edit-actions { display: flex; gap: 6px; margin-left: auto; }
+.edit-save-button, .edit-cancel-button { min-height: 33px; padding: 7px 11px; border: 0; border-radius: 7px; font-size: 10px; font-weight: 600; cursor: pointer; }
+.edit-save-button { color: #fff; background: var(--green); }
+.edit-save-button:hover { background: var(--green-dark); }
+.edit-save-button:disabled { opacity: .65; cursor: wait; }
+.edit-cancel-button { color: #737c73; background: #f1f3ef; }
+.edit-cancel-button:hover { background: #e8ebe6; }
 
 .empty-state { padding: 44px 20px 34px; text-align: center; }
 .empty-state[hidden] { display: none; }
@@ -209,10 +229,12 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
   .list-toolbar { align-items: flex-start; flex-direction: column; gap: 13px; margin-top: 34px; }
   .filters { width: 100%; }
   .filter-button { flex: 1; }
+  .task-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .filter-select, .filter-date { width: 100%; }
 }
 
 @media (hover: none) {
-  .delete-button { opacity: 1; }
+  .delete-button, .edit-button { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

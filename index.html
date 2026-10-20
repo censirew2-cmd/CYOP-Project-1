@@ -72,6 +72,32 @@
             <button class="filter-button" type="button" data-filter="completed" aria-pressed="false">Completed</button>
           </div>
         </div>
+        <div class="task-filters" aria-label="Filter tasks by priority and due date">
+          <label class="filter-control">
+            <span>Priority</span>
+            <select class="filter-select" id="priority-filter">
+              <option value="all">All priorities</option>
+              <option value="high">High priority</option>
+              <option value="medium">Medium priority</option>
+              <option value="low">Low priority</option>
+            </select>
+          </label>
+          <label class="filter-control">
+            <span>Due date</span>
+            <select class="filter-select" id="due-filter">
+              <option value="all">Any due date</option>
+              <option value="scheduled">Has a due date</option>
+              <option value="unscheduled">No due date</option>
+              <option value="overdue">Overdue</option>
+              <option value="today">Due today</option>
+              <option value="upcoming">Upcoming</option>
+            </select>
+          </label>
+          <label class="filter-control exact-date-control">
+            <span>Exact date</span>
+            <input class="filter-date" id="exact-date-filter" type="date" aria-label="Filter by exact due date">
+          </label>
+        </div>
 
         <div class="progress-track" aria-label="Task completion">
           <div class="progress-fill" id="progress-fill"></div>

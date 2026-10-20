@@ -2,6 +2,9 @@ const taskList = document.querySelector("#task-list");
 const taskCount = document.querySelector("#task-count");
 const completedCount = document.querySelector("#completion-number");
 const progressFill = document.querySelector("#progress-fill");
+const priorityFilter = document.querySelector("#priority-filter");
+const dueFilter = document.querySelector("#due-filter");
+const exactDateFilter = document.querySelector("#exact-date-filter");
 const emptyState = document.querySelector("#empty-state");
 const emptyTitle = document.querySelector("#empty-title");
 const emptyCopy = document.querySelector("#empty-copy");
@@ -14,6 +17,14 @@ const addButton = addForm.querySelector("button");
 
 let tasks = [];
 let activeFilter = "all";
+let editingIndex = null;
+
+function localDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 document.querySelector("#today-label").textContent = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -39,6 +50,7 @@ async function request(url, options = {}) {
 
 function renderTasks() {
   const completed = tasks.filter((task) => task.done).length;
+  const today = localDateString(new Date());
   const visibleTasks = tasks
     .map((task, index) => ({ ...task, index }))
     .filter(({ done }) => (
@@ -46,6 +58,30 @@ function renderTasks() {
       || (activeFilter === "active" && !done)
       || (activeFilter === "completed" && done)
     ));
+  const filteredTasks = visibleTasks.filter((task) => {
+    if (priorityFilter.value !== "all" && task.priority !== priorityFilter.value) {
+      return false;
+    }
+
+    if (exactDateFilter.value && task.due_date !== exactDateFilter.value) {
+      return false;
+    }
+
+    switch (dueFilter.value) {
+      case "scheduled":
+        return Boolean(task.due_date);
+      case "unscheduled":
+        return !task.due_date;
+      case "overdue":
+        return Boolean(task.due_date) && task.due_date < today && !task.done;
+      case "today":
+        return task.due_date === today;
+      case "upcoming":
+        return Boolean(task.due_date) && task.due_date > today;
+      default:
+        return true;
+    }
+  });
 
   taskList.replaceChildren();
   taskCount.textContent = String(tasks.length);
@@ -56,9 +92,75 @@ function renderTasks() {
     `${completed} of ${tasks.length} tasks completed`,
   );
 
-  for (const task of visibleTasks) {
+  for (const task of filteredTasks) {
     const item = document.createElement("li");
     item.className = `task-item${task.done ? " is-done" : ""}`;
+
+    if (task.index === editingIndex) {
+      const editor = document.createElement("form");
+      editor.className = "task-editor";
+
+      const titleInput = document.createElement("input");
+      titleInput.className = "edit-title-input";
+      titleInput.type = "text";
+      titleInput.maxLength = 500;
+      titleInput.value = task.title;
+      titleInput.setAttribute("aria-label", "Task title");
+      titleInput.required = true;
+
+      const prioritySelect = document.createElement("select");
+      prioritySelect.className = "edit-priority-input";
+      prioritySelect.setAttribute("aria-label", "Task priority");
+      for (const value of ["low", "medium", "high"]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = `${value[0].toUpperCase()}${value.slice(1)} priority`;
+        option.selected = (task.priority || "medium") === value;
+        prioritySelect.append(option);
+      }
+
+      const dueDateInput = document.createElement("input");
+      dueDateInput.className = "edit-date-input";
+      dueDateInput.type = "date";
+      dueDateInput.value = task.due_date || "";
+      dueDateInput.setAttribute("aria-label", "Task due date");
+
+      const actions = document.createElement("div");
+      actions.className = "edit-actions";
+      const saveButton = document.createElement("button");
+      saveButton.className = "edit-save-button";
+      saveButton.type = "submit";
+      saveButton.textContent = "Save";
+      const cancelButton = document.createElement("button");
+      cancelButton.className = "edit-cancel-button";
+      cancelButton.type = "button";
+      cancelButton.textContent = "Cancel";
+      cancelButton.addEventListener("click", () => {
+        editingIndex = null;
+        renderTasks();
+      });
+      actions.append(saveButton, cancelButton);
+      editor.append(titleInput, prioritySelect, dueDateInput, actions);
+      editor.addEventListener("submit", (event) => {
+        event.preventDefault();
+        saveTask(task.index, {
+          title: titleInput.value.trim(),
+          priority: prioritySelect.value,
+          due_date: dueDateInput.value,
+        }, saveButton);
+      });
+      editor.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          editingIndex = null;
+          renderTasks();
+        }
+      });
+      item.append(editor);
+      taskList.append(item);
+      titleInput.focus();
+      titleInput.select();
+      continue;
+    }
 
     const toggle = document.createElement("button");
     toggle.className = `task-toggle${task.done ? " is-done" : ""}`;
@@ -107,20 +209,56 @@ function renderTasks() {
     remove.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12m-10 0 .7 10h6.6L14 6m-6-2h4l1 2m-4 3v4m3-4v4"/></svg>';
     remove.addEventListener("click", () => deleteTask(task.index));
 
-    item.append(remove);
+    const edit = document.createElement("button");
+    edit.className = "edit-button";
+    edit.type = "button";
+    edit.setAttribute("aria-label", `Edit ${task.title}`);
+    edit.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12.8 4.2 3 3M4 16l3.8-.8L16.5 6.5a2.1 2.1 0 0 0-3-3L4.8 12.2 4 16Z"/></svg>';
+    edit.addEventListener("click", () => {
+      editingIndex = task.index;
+      statusMessage.textContent = "";
+      renderTasks();
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "task-actions";
+    actions.append(edit, remove);
+    item.append(actions);
     taskList.append(item);
   }
 
-  emptyState.hidden = visibleTasks.length > 0;
+  emptyState.hidden = filteredTasks.length > 0;
   if (tasks.length === 0) {
     emptyTitle.textContent = "Nothing on your list yet";
     emptyCopy.textContent = "Add your first task above and make today count.";
-  } else if (activeFilter === "active") {
+  } else if (activeFilter === "active" && filteredTasks.length === 0
+    && priorityFilter.value === "all" && dueFilter.value === "all" && !exactDateFilter.value) {
     emptyTitle.textContent = "All caught up";
     emptyCopy.textContent = "There are no tasks in progress right now.";
-  } else {
+  } else if (activeFilter === "completed" && filteredTasks.length === 0
+    && priorityFilter.value === "all" && dueFilter.value === "all" && !exactDateFilter.value) {
     emptyTitle.textContent = "No completed tasks yet";
     emptyCopy.textContent = "Finish a task and it will show up here.";
+  } else {
+    emptyTitle.textContent = "No tasks match these filters";
+    emptyCopy.textContent = "Try changing or clearing a filter to see more tasks.";
+  }
+}
+
+async function saveTask(index, updates, saveButton) {
+  statusMessage.textContent = "";
+  saveButton.disabled = true;
+  try {
+    const data = await request(`/api/tasks/${index}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
+    tasks[index] = data.task;
+    editingIndex = null;
+    renderTasks();
+  } catch (error) {
+    showError(error.message);
+    saveButton.disabled = false;
   }
 }
 
@@ -171,6 +309,9 @@ addForm.addEventListener("submit", async (event) => {
     taskInput.value = "";
     priorityInput.value = "medium";
     dueDateInput.value = "";
+    priorityFilter.value = "all";
+    dueFilter.value = "all";
+    exactDateFilter.value = "";
     activeFilter = "all";
     document.querySelectorAll(".filter-button").forEach((button) => {
       const selected = button.dataset.filter === activeFilter;
@@ -197,6 +338,10 @@ document.querySelectorAll(".filter-button").forEach((button) => {
     renderTasks();
   });
 });
+
+priorityFilter.addEventListener("change", renderTasks);
+dueFilter.addEventListener("change", renderTasks);
+exactDateFilter.addEventListener("change", renderTasks);
 
 request("/api/tasks")
   .then((data) => {

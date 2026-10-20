@@ -181,16 +181,39 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
             return
         try:
             body = self.read_json()
-            done = body.get("done") if isinstance(body, dict) else None
-            if not isinstance(done, bool):
-                raise InvalidRequest("Completion state must be true or false.")
+            if not isinstance(body, dict) or not body:
+                raise InvalidRequest("Provide task fields to update.")
+            if set(body) - {"title", "done", "priority", "due_date"}:
+                raise InvalidRequest("The request contains unsupported task fields.")
+            updates = {}
+            if "title" in body:
+                title = body["title"]
+                if not isinstance(title, str) or not title.strip():
+                    raise InvalidRequest("A task description is required.")
+                if len(title.strip()) > 500:
+                    raise InvalidRequest("Task descriptions must be 500 characters or fewer.")
+                updates["title"] = title.strip()
+            if "done" in body:
+                if not isinstance(body["done"], bool):
+                    raise InvalidRequest("Completion state must be true or false.")
+                updates["done"] = body["done"]
+            if "priority" in body:
+                priority = body["priority"]
+                if not isinstance(priority, str) or priority not in PRIORITIES:
+                    raise InvalidRequest("Priority must be low, medium, or high.")
+                updates["priority"] = priority
+            if "due_date" in body:
+                due_date = body["due_date"]
+                if not is_valid_due_date(due_date):
+                    raise InvalidRequest("Due date must be a valid calendar date.")
+                updates["due_date"] = due_date
             with TASKS_LOCK:
                 tasks = load_tasks()
                 index = int(match.group(1))
                 if index >= len(tasks):
                     self.send_json(404, {"error": "Task not found."})
                     return
-                tasks[index]["done"] = done
+                tasks[index].update(updates)
                 save_tasks(tasks)
                 task = tasks[index]
             self.send_json(200, {"task": task})
