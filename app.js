@@ -8,6 +8,7 @@ const emptyCopy = document.querySelector("#empty-copy");
 const statusMessage = document.querySelector("#status-message");
 const addForm = document.querySelector("#add-form");
 const taskInput = document.querySelector("#task-input");
+const priorityInput = document.querySelector("#priority-input");
 const addButton = addForm.querySelector("button");
 
 let tasks = [];
@@ -72,6 +73,10 @@ function renderTasks() {
     title.className = "task-title";
     title.textContent = task.title;
 
+    const priority = document.createElement("span");
+    priority.className = `priority-badge priority-${task.priority || "medium"}`;
+    priority.textContent = `${task.priority || "medium"} priority`;
+
     const remove = document.createElement("button");
     remove.className = "delete-button";
     remove.type = "button";
@@ -79,7 +84,7 @@ function renderTasks() {
     remove.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12m-10 0 .7 10h6.6L14 6m-6-2h4l1 2m-4 3v4m3-4v4"/></svg>';
     remove.addEventListener("click", () => deleteTask(task.index));
 
-    item.append(toggle, title, remove);
+    item.append(toggle, title, priority, remove);
     taskList.append(item);
   }
 
@@ -124,6 +129,7 @@ async function deleteTask(index) {
 addForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const title = taskInput.value.trim();
+  const priority = priorityInput.value;
   if (!title) {
     showError("Task description cannot be empty.");
     taskInput.focus();
@@ -135,10 +141,11 @@ addForm.addEventListener("submit", async (event) => {
   try {
     const data = await request("/api/tasks", {
       method: "POST",
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title, priority }),
     });
     tasks.push(data.task);
     taskInput.value = "";
+    priorityInput.value = "medium";
     activeFilter = "all";
     document.querySelectorAll(".filter-button").forEach((button) => {
       const selected = button.dataset.filter === activeFilter;

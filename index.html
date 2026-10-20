@@ -50,6 +50,12 @@
           <span class="add-icon" aria-hidden="true">+</span>
           <label class="visually-hidden" for="task-input">Add a task</label>
           <input id="task-input" name="title" type="text" maxlength="500" placeholder="Add a task to your list..." autocomplete="off" required>
+          <label class="visually-hidden" for="priority-input">Task priority</label>
+          <select class="priority-select" id="priority-input" name="priority">
+            <option value="low">Low priority</option>
+            <option value="medium" selected>Medium priority</option>
+            <option value="high">High priority</option>
+          </select>
           <button class="add-button" type="submit">Add task <span aria-hidden="true">↗</span></button>
         </form>
 

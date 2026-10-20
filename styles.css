@@ -127,6 +127,8 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
 .add-icon { color: var(--green); font-size: 23px; font-weight: 400; line-height: 1; }
 .add-form input { width: 100%; min-width: 0; padding: 9px 0; border: 0; outline: 0; color: var(--ink); font-size: 12px; }
 .add-form input::placeholder { color: #a6aca6; }
+.priority-select { flex: 0 0 auto; padding: 10px 8px; border: 1px solid #e9ece6; border-radius: 8px; outline: 0; color: #59645a; background: #fbfcfa; font-size: 10px; cursor: pointer; }
+.priority-select:focus { border-color: #a7bda8; }
 .add-button { display: inline-flex; align-items: center; justify-content: center; gap: 11px; min-width: 106px; padding: 11px 14px; border: 0; border-radius: 8px; color: #fff; background: var(--green); font-size: 11px; font-weight: 600; cursor: pointer; transition: background .2s, transform .2s; }
 .add-button:hover { transform: translateY(-1px); background: var(--green-dark); }
 .add-button:disabled { opacity: .65; cursor: wait; }
@@ -152,6 +154,10 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
 .task-toggle svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .task-title { flex: 1; min-width: 0; margin: 0; color: #414941; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .task-item.is-done .task-title { color: #a0a69f; text-decoration: line-through; text-decoration-color: #b4bcb3; }
+.priority-badge { flex: 0 0 auto; padding: 5px 8px; border-radius: 6px; font-size: 9px; font-weight: 600; text-transform: capitalize; }
+.priority-low { color: #56775a; background: #eef5ed; }
+.priority-medium { color: #8a6b35; background: #f8f2e5; }
+.priority-high { color: #a6534a; background: #fbefed; }
 .delete-button { display: grid; width: 29px; height: 29px; padding: 0; place-items: center; border: 0; border-radius: 7px; color: #a1a7a0; background: transparent; opacity: 0; cursor: pointer; transition: color .2s, background .2s, opacity .2s; }
 .task-item:hover .delete-button, .delete-button:focus-visible { opacity: 1; }
 .delete-button:hover { color: #a6534a; background: #fbf0ee; }
@@ -189,8 +195,12 @@ h1 { margin-bottom: 10px; font-family: var(--serif); font-size: clamp(34px, 4vw,
   .completion-copy strong { font-size: 9px; }
   h1 { font-size: 34px; }
   .subtitle { max-width: 270px; font-size: 12px; }
-  .add-form { gap: 9px; margin-top: 28px; padding-left: 12px; }
-  .add-button { min-width: 82px; gap: 6px; padding: 10px 9px; font-size: 10px; }
+  .add-form { flex-wrap: wrap; gap: 8px; margin-top: 28px; padding: 10px; }
+  .add-form input { flex: 1 1 calc(100% - 35px); }
+  .priority-select { margin-left: 27px; }
+  .add-button { min-width: 82px; gap: 6px; margin-left: auto; padding: 10px 9px; font-size: 10px; }
+  .task-item { gap: 9px; padding: 12px 10px; }
+  .priority-badge { padding: 5px 6px; font-size: 8px; }
   .list-toolbar { align-items: flex-start; flex-direction: column; gap: 13px; margin-top: 34px; }
   .filters { width: 100%; }
   .filter-button { flex: 1; }

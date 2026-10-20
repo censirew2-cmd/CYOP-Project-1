@@ -20,6 +20,7 @@ WEB_FILES = {
 TASK_PATH = re.compile(r"^/api/tasks/(\d+)$")
 TASKS_LOCK = threading.Lock()
 MAX_REQUEST_SIZE = 16_384
+PRIORITIES = {"low", "medium", "high"}
 
 
 class InvalidRequest(ValueError):
@@ -38,9 +39,13 @@ def load_tasks():
         not isinstance(task, dict)
         or not isinstance(task.get("title"), str)
         or not isinstance(task.get("done"), bool)
+        or not isinstance(task.get("priority", "medium"), str)
+        or task.get("priority", "medium") not in PRIORITIES
         for task in tasks
     ):
         raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
+    for task in tasks:
+        task.setdefault("priority", "medium")
     return tasks
 
 
@@ -124,13 +129,16 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
         try:
             body = self.read_json()
             title = body.get("title") if isinstance(body, dict) else None
+            priority = body.get("priority", "medium") if isinstance(body, dict) else None
             if not isinstance(title, str) or not title.strip():
                 raise InvalidRequest("A task description is required.")
             if len(title.strip()) > 500:
                 raise InvalidRequest("Task descriptions must be 500 characters or fewer.")
+            if not isinstance(priority, str) or priority not in PRIORITIES:
+                raise InvalidRequest("Priority must be low, medium, or high.")
             with TASKS_LOCK:
                 tasks = load_tasks()
-                task = {"title": title.strip(), "done": False}
+                task = {"title": title.strip(), "done": False, "priority": priority}
                 tasks.append(task)
                 save_tasks(tasks)
             self.send_json(201, {"task": task})
