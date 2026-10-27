@@ -368,6 +368,11 @@ async function deleteTask(index) {
   statusMessage.textContent = "";
   try {
     await request(`/api/tasks/${index}`, { method: "DELETE" });
+    if (editingIndex === index) {
+      editingIndex = null;
+    } else if (editingIndex !== null && editingIndex > index) {
+      editingIndex -= 1;
+    }
     tasks.splice(index, 1);
     renderTasks();
   } catch (error) {
