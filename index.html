@@ -37,12 +37,12 @@
         <div class="heading-row">
           <div>
             <p class="eyebrow heading-eyebrow">A fresh start, every day</p>
-            <h1 id="page-title">Your to-do list<span class="heading-period">.</span></h1>
-            <p class="subtitle">Small steps add up. What would you like to get done?</p>
+            <h1 id="page-title">Your calendar<span class="heading-period">.</span></h1>
+            <p class="subtitle">See what’s coming up and make time for what matters.</p>
           </div>
           <div class="completion-card" aria-live="polite">
             <span class="completion-number" id="completion-number">0</span>
-            <span class="completion-copy"><strong>completed</strong><span>tasks today</span></span>
+            <span class="completion-copy"><strong>completed</strong><span>tasks total</span></span>
           </div>
         </div>
 
@@ -63,7 +63,7 @@
 
         <div class="list-toolbar">
           <div class="list-heading">
-            <h2>Your tasks</h2>
+            <h2>Calendar</h2>
             <span class="task-count" id="task-count">0</span>
           </div>
           <div class="filters" role="group" aria-label="Filter tasks">
@@ -99,17 +99,39 @@
           </label>
         </div>
 
-        <div class="progress-track" aria-label="Task completion">
-          <div class="progress-fill" id="progress-fill"></div>
-        </div>
-        <ul class="task-list" id="task-list" aria-live="polite"></ul>
-        <div class="empty-state" id="empty-state" hidden>
-          <span class="empty-illustration" aria-hidden="true">
-            <svg viewBox="0 0 48 48"><path d="M14 8h20a4 4 0 0 1 4 4v28H10V12a4 4 0 0 1 4-4Zm4 0V5h12v3m-11 13 4 4 8-9m-12 16h14"/></svg>
-          </span>
-          <h3 id="empty-title">Nothing on your list yet</h3>
-          <p id="empty-copy">Add your first task above and make today count.</p>
-        </div>
+        <section class="calendar-card" aria-label="Monthly task calendar">
+          <div class="calendar-toolbar">
+            <div class="calendar-month" id="calendar-month" aria-live="polite"></div>
+            <div class="calendar-navigation">
+              <button class="calendar-nav-button" id="previous-month" type="button" aria-label="Previous month">‹</button>
+              <button class="calendar-today-button" id="calendar-today" type="button">Today</button>
+              <button class="calendar-nav-button" id="next-month" type="button" aria-label="Next month">›</button>
+            </div>
+          </div>
+          <div class="calendar-grid" id="calendar-grid" role="grid" aria-label="Calendar days"></div>
+        </section>
+        <section class="agenda-section" aria-labelledby="agenda-title">
+          <div class="agenda-heading">
+            <div>
+              <p class="eyebrow">Your schedule</p>
+              <h2 id="agenda-title">Tasks for today</h2>
+            </div>
+            <span class="agenda-count" id="agenda-count">0 tasks</span>
+          </div>
+          <ul class="task-list" id="task-list" aria-live="polite"></ul>
+          <p class="agenda-empty" id="agenda-empty" hidden>No tasks scheduled for this day.</p>
+        </section>
+        <section class="unscheduled-section" aria-labelledby="unscheduled-title">
+          <div class="agenda-heading">
+            <div>
+              <p class="eyebrow">Whenever you have time</p>
+              <h2 id="unscheduled-title">No due date</h2>
+            </div>
+            <span class="agenda-count" id="unscheduled-count">0 tasks</span>
+          </div>
+          <ul class="task-list" id="unscheduled-list" aria-live="polite"></ul>
+          <p class="agenda-empty" id="unscheduled-empty" hidden>All tasks have a due date.</p>
+        </section>
         <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
       </div>
       <footer class="footer"><span>One thing at a time.</span><span>DAYLIST <span class="footer-star">✳</span></span></footer>

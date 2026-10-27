@@ -1,0 +1,16 @@
+# Tool settings in one file, so the tools run the same way in your terminal and in
+# the pipeline. It goes in the project folder, next to requirements.txt.
+
+[tool.pylint.main]
+# Lint everything with: pylint --recursive=y .
+# Skip the virtual environment (other people's code). Different name? List yours.
+ignore = [".venv"]
+
+[tool.bandit]
+# Bandit reads this file only when it is named: bandit -c pyproject.toml -r .
+exclude_dirs = [".venv"]
+
+[tool.bandit.assert_used]
+# B101 (assert) is skipped in test files only: assert is how pytest checks results.
+# In app code it stays a finding, because python -O strips every assert.
+skips = ["*/test_*.py"]

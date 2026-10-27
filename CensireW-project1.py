@@ -61,7 +61,10 @@ def load_tasks():
         or not is_valid_due_date(task.get("due_date", ""))
         for task in tasks
     ):
-       raise ValueError("tasks.json must contain a list of tasks with titles and completion states.")
+        raise ValueError(
+            "tasks.json must contain a list of tasks with titles "
+            "and completion states."
+        )
     for task in tasks:
         task.setdefault("priority", "medium")
         task.setdefault("due_date", "")
