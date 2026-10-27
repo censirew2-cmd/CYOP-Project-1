@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 
 
 TASKS_FILE = Path(__file__).with_name("tasks.json")
+NOTIFICATION_SETTINGS_FILE = Path(__file__).with_name("notification_settings.json")
 WEB_FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/index.html": ("index.html", "text/html; charset=utf-8"),
@@ -73,21 +74,48 @@ def load_tasks():
 
 def save_tasks(tasks):
     """Atomically save tasks next to this script."""
+    save_json_file(TASKS_FILE, tasks)
+
+
+def save_json_file(path, data):
+    """Atomically save JSON data at the given path."""
     temporary_path = None
     try:
         with tempfile.NamedTemporaryFile(
             "w",
             encoding="utf-8",
-            dir=TASKS_FILE.parent,
+            dir=path.parent,
             delete=False,
         ) as file:
             temporary_path = Path(file.name)
-            json.dump(tasks, file, indent=2)
+            json.dump(data, file, indent=2)
             file.write("\n")
-        temporary_path.replace(TASKS_FILE)
+        temporary_path.replace(path)
     finally:
         if temporary_path is not None and temporary_path.exists():
             temporary_path.unlink()
+
+
+def load_notification_settings():
+    """Load saved notification channel preferences, defaulting both to disabled."""
+    try:
+        with NOTIFICATION_SETTINGS_FILE.open("r", encoding="utf-8") as file:
+            settings = json.load(file)
+    except FileNotFoundError:
+        return {"email_enabled": False, "sms_enabled": False}
+
+    if (
+        not isinstance(settings, dict)
+        or not isinstance(settings.get("email_enabled"), bool)
+        or not isinstance(settings.get("sms_enabled"), bool)
+    ):
+        raise ValueError(
+            "notification_settings.json must contain email_enabled and sms_enabled boolean values."
+        )
+    return {
+        "email_enabled": settings["email_enabled"],
+        "sms_enabled": settings["sms_enabled"],
+    }
 
 
 class TodoRequestHandler(BaseHTTPRequestHandler):
@@ -147,9 +175,46 @@ class TodoRequestHandler(BaseHTTPRequestHandler):
                 self.send_json(500, {"error": "Tasks could not be loaded. Check tasks.json."})
             return
 
+        if path == "/api/notifications":
+            try:
+                with TASKS_LOCK:
+                    settings = load_notification_settings()
+                self.send_json(200, {"settings": settings})
+            except (OSError, ValueError):
+                logging.exception("Unable to load notification settings")
+                self.send_json(500, {"error": "Notification settings could not be loaded."})
+            return
+
         self.send_json(404, {"error": "Not found."})
 
-    def do_POST(self) -> None:
+    def do_PUT(self) -> None:  # pylint: disable=invalid-name
+        """Save notification channel preferences."""
+        if urlsplit(self.path).path != "/api/notifications":
+            self.send_json(404, {"error": "Not found."})
+            return
+        try:
+            body = self.read_json()
+            if (
+                not isinstance(body, dict)
+                or set(body) != {"email_enabled", "sms_enabled"}
+                or not isinstance(body["email_enabled"], bool)
+                or not isinstance(body["sms_enabled"], bool)
+            ):
+                raise InvalidRequest("Email and text notification settings must be true or false.")
+            settings = {
+                "email_enabled": body["email_enabled"],
+                "sms_enabled": body["sms_enabled"],
+            }
+            with TASKS_LOCK:
+                save_json_file(NOTIFICATION_SETTINGS_FILE, settings)
+            self.send_json(200, {"settings": settings})
+        except InvalidRequest as error:
+            self.send_json(400, {"error": str(error)})
+        except OSError:
+            logging.exception("Unable to save notification settings")
+            self.send_json(500, {"error": "Notification settings could not be saved."})
+
+    def do_POST(self) -> None:  # pylint: disable=invalid-name
         """Handle creation of a new task."""
         if urlsplit(self.path).path != "/api/tasks":
             self.send_json(404, {"error": "Not found."})

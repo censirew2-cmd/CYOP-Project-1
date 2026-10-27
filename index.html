@@ -132,6 +132,39 @@
           <ul class="task-list" id="unscheduled-list" aria-live="polite"></ul>
           <p class="agenda-empty" id="unscheduled-empty" hidden>All tasks have a due date.</p>
         </section>
+        <section class="notification-settings" aria-labelledby="notification-title">
+          <div class="agenda-heading">
+            <div>
+              <p class="eyebrow">Stay in the loop</p>
+              <h2 id="notification-title">Notification preferences</h2>
+            </div>
+          </div>
+          <p class="notification-description">
+            Choose the channels you prefer. These settings are saved here, but message delivery is not configured.
+          </p>
+          <form id="notification-form">
+            <label class="notification-option">
+              <span class="notification-option-copy">
+                <strong>Email notifications</strong>
+                <span>Reminders by email</span>
+              </span>
+              <input id="email-notifications" name="email_enabled" type="checkbox">
+              <span class="toggle-control" aria-hidden="true"></span>
+            </label>
+            <label class="notification-option">
+              <span class="notification-option-copy">
+                <strong>Text notifications</strong>
+                <span>Reminders by SMS</span>
+              </span>
+              <input id="sms-notifications" name="sms_enabled" type="checkbox">
+              <span class="toggle-control" aria-hidden="true"></span>
+            </label>
+            <div class="notification-actions">
+              <p class="notification-status" id="notification-status" role="status" aria-live="polite"></p>
+              <button class="edit-save-button" id="save-notifications" type="submit">Save preferences</button>
+            </div>
+          </form>
+        </section>
         <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
       </div>
       <footer class="footer"><span>One thing at a time.</span><span>DAYLIST <span class="footer-star">✳</span></span></footer>

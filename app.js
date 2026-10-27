@@ -13,6 +13,11 @@ const priorityFilter = document.querySelector("#priority-filter");
 const dueFilter = document.querySelector("#due-filter");
 const exactDateFilter = document.querySelector("#exact-date-filter");
 const statusMessage = document.querySelector("#status-message");
+const notificationForm = document.querySelector("#notification-form");
+const emailNotifications = document.querySelector("#email-notifications");
+const smsNotifications = document.querySelector("#sms-notifications");
+const notificationStatus = document.querySelector("#notification-status");
+const saveNotificationsButton = document.querySelector("#save-notifications");
 const addForm = document.querySelector("#add-form");
 const taskInput = document.querySelector("#task-input");
 const priorityInput = document.querySelector("#priority-input");
@@ -464,6 +469,40 @@ document.querySelector("#calendar-today").addEventListener("click", () => {
   selectedDate = localDateString(today);
   renderTasks();
 });
+
+notificationForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  notificationStatus.textContent = "";
+  saveNotificationsButton.disabled = true;
+  try {
+    const data = await request("/api/notifications", {
+      method: "PUT",
+      body: JSON.stringify({
+        email_enabled: emailNotifications.checked,
+        sms_enabled: smsNotifications.checked,
+      }),
+    });
+    emailNotifications.checked = data.settings.email_enabled;
+    smsNotifications.checked = data.settings.sms_enabled;
+    notificationStatus.textContent = "Preferences saved. Messages will not be sent until delivery is configured.";
+    notificationStatus.classList.remove("is-error");
+  } catch (error) {
+    notificationStatus.textContent = error.message;
+    notificationStatus.classList.add("is-error");
+  } finally {
+    saveNotificationsButton.disabled = false;
+  }
+});
+
+request("/api/notifications")
+  .then((data) => {
+    emailNotifications.checked = data.settings.email_enabled;
+    smsNotifications.checked = data.settings.sms_enabled;
+  })
+  .catch((error) => {
+    notificationStatus.textContent = `Notification preferences could not be loaded: ${error.message}`;
+    notificationStatus.classList.add("is-error");
+  });
 
 request("/api/tasks")
   .then((data) => {
